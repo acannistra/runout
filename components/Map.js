@@ -31,6 +31,45 @@ const slopeAngleLayer = {
     beforeId: "building"
 }
 
+const followLineSource = {
+    id: '_trackline',
+    type: 'geojson',
+    data: {
+        type: "Feature",
+        geometry: {
+            type: "LineString",
+            coordinates: []
+        }
+    }
+}
+
+const followLineLayer = {
+    id: '_trackline_layer',
+    type: 'line',
+    source: '_trackline',
+    paint: {
+        "line-color": 'red'
+    }
+}
+
+const followLineLabelLayer = {
+    id: "_trackline_label",
+    type: "symbol",
+    "layout": {
+        "text-field": [
+            'number-format',
+            ['get', 'alpha'],
+            { 'max-fraction-digits': 2, 'unit': 'degree', 'unitDisplay': 'narrow' }
+        ],
+        "symbol-placement": "line-center",
+        "text-font": ["Roboto Condensed"],
+        "text-size": 18,
+        "text-justify": "center",
+        "symbol-spacing": 1000,
+        "text-anchor": "bottom"
+    },
+}
+
 export default function RunoutMap() {
     const [viewport, setViewport] = React.useState({
         height: "100%",
@@ -52,10 +91,39 @@ export default function RunoutMap() {
         return toDegrees(alpha)
     }
 
+    const _followLine = (pt1, pt2) => {
+        var thisMap = mapRef.current.getMap();
+        var alpha = computeAlpha(pt1, pt2);
+        var newData = {
+            "type": "Feature",
+            "properties": {
+                "alpha": alpha
+            },
+            "geometry": {
+                "coordinates": [
+                    pt1.point,
+                    pt2.point
+                ],
+                "type": "LineString"
+            }
+        }
+        thisMap.getSource('_trackline').setData(newData);
+    }
+
+    const _onMouseMove = (event) => {
+        if (clickStatus.clickedOnce) {
+            var thisPt = {
+                point: [event.lngLat.lng, event.lngLat.lat],
+                elevation: mapRef.current.queryTerrainElevation(event.lngLat, { exaggerated: false })
+            }
+            _followLine(clickStatus.clickedPoint, thisPt)
+        }
+    }
+
     const _onClick = clickEvent => {
         var thisPt = {
             point: [clickEvent.lngLat.lng, clickEvent.lngLat.lat],
-            elevation: mapRef.current.queryTerrainElevation(clickEvent.lngLat)
+            elevation: mapRef.current.queryTerrainElevation(clickEvent.lngLat, { exaggerated: false })
         }
         if (clickStatus.clickedOnce) {
             console.log("calculate alpha with points", clickStatus.clickedPoint, thisPt);
@@ -89,15 +157,18 @@ export default function RunoutMap() {
                     latitude: 40,
                     zoom: 3.5,
                 }}
+                hash={true}
                 mapStyle="mapbox://styles/mapbox/outdoors-v12"
                 onClick={_onClick}
-                terrain={{ source: 'mapbox-dem' }}
+                onMouseMove={_onMouseMove}
+                terrain={{ source: 'mapbox-dem', exaggeration: 0 }}
             >
                 <GeolocateControl
                     positionOptions={{ enableHighAccuracy: true }}
+                    position={'bottom-right'}
                 />
 
-                <NavigationControl />
+                <NavigationControl position={'bottom-right'} />
 
 
                 <Source
@@ -110,6 +181,11 @@ export default function RunoutMap() {
 
                 <Source {...slopeAngleSource}>
                     <Layer {...slopeAngleLayer} />
+                </Source>
+
+                <Source {...followLineSource}>
+                    <Layer {...followLineLayer} />
+                    <Layer {...followLineLabelLayer} />
                 </Source>
 
 
