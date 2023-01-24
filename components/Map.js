@@ -2,6 +2,8 @@ import * as React from 'react';
 import dynamic from 'next/dynamic';
 import Map, { GeolocateControl, Source, Layer, NavigationControl } from 'react-map-gl';
 import * as turf from "@turf/turf";
+import { v4 as uuidv4 } from 'uuid';
+
 
 import "mapbox-gl/dist/mapbox-gl.css";
 
@@ -10,6 +12,33 @@ function toDegrees(angle) {
 }
 
 const MAPBOX_TOKEN = 'pk.eyJ1IjoiYWNhbm5pc3RyYSIsImEiOiJjbGQ1OXNvbDgwaDFqM3ZyeGNwcmZ6b3dhIn0.1dAZytAellWvM8e6yIZ80Q';
+
+const randomColor = () => {
+    return "#" + Math.floor(Math.random() * 16777215).toString(16);
+}
+
+const addLineToGeoJSON = (start, end, color, id, angle, geojson) => {
+    var fc = [
+        ...geojson.features,
+        {
+            type: "Feature",
+            geometry: {
+                type: "LineString",
+                coordinates: [
+                    start.point, end.point
+                ]
+            },
+            properties: {
+                'color': color,
+                'id': id,
+                'alpha': angle,
+                'start-ele': start.elevation,
+                'end-ele': end.elevation
+            }
+        }
+    ]
+    return fc
+}
 
 const slopeAngleSource = {
     id: "usgs-slope",
@@ -32,6 +61,46 @@ const slopeAngleLayer = {
     beforeId: "building"
 }
 
+const savedLineLayer = {
+    id: '_savedline_layer',
+    type: 'line',
+    source: '_savedline',
+    paint: {
+        "line-color": ['get', 'color'],
+        "line-width": 5
+    }
+}
+
+const savedLineSource = {
+    id: "_savedline",
+    type: "geojson",
+    data: {
+        type: "FeatureCollection",
+        features: [
+        ]
+    }
+}
+
+const savedLineLabelLayer = {
+    id: "_savedline_label",
+    source: "_savedline",
+    type: "symbol",
+    "layout": {
+        "text-field": [
+            'number-format',
+            ['get', 'alpha'],
+            { 'max-fraction-digits': 2, 'unit': 'degree', 'unitDisplay': 'narrow' }
+        ],
+        "symbol-placement": "line-center",
+        "text-font": ["Roboto Condensed"],
+        "text-size": 18,
+        "text-justify": "center",
+        "symbol-spacing": 1000,
+        "text-anchor": "bottom"
+    },
+}
+
+
 const followLineSource = {
     id: '_trackline',
     type: 'geojson',
@@ -44,12 +113,15 @@ const followLineSource = {
     }
 }
 
+
 const followLineLayer = {
     id: '_trackline_layer',
     type: 'line',
     source: '_trackline',
     paint: {
-        "line-color": 'red'
+        "line-color": 'red',
+        "line-width": 5
+
     }
 }
 
@@ -71,11 +143,7 @@ const followLineLabelLayer = {
     },
 }
 
-export default function RunoutMap() {
-    const [viewport, setViewport] = React.useState({
-        height: "100%",
-        width: "100%"
-    });
+export default function RunoutMap({ measurements, setMeasurements }) {
 
     const [clickStatus, setClickStatus] = React.useState({
         clickedOnce: false,
@@ -127,13 +195,29 @@ export default function RunoutMap() {
             elevation: mapRef.current.queryTerrainElevation(clickEvent.lngLat, { exaggerated: false })
         }
         if (clickStatus.clickedOnce) {
-            console.log("calculate alpha with points", clickStatus.clickedPoint, thisPt);
+            // save line
+            var id = uuidv4();
+            var color = randomColor();
+            var alpha = computeAlpha(clickStatus.clickedPoint, thisPt);
+            var currentSource = mapRef.current.getMap().getSource('_savedline')
+            var newGeoJSON = addLineToGeoJSON(clickStatus.clickedPoint, thisPt, color, id, alpha, currentSource._data);
 
-            console.log(computeAlpha(thisPt, clickStatus.clickedPoint))
+            currentSource.setData({
+                'type': "FeatureCollection",
+                "features": newGeoJSON
+            })
+            console.log(mapRef.current.getMap().getSource('_savedline'))
             setClickStatus({
                 clickedOnce: false,
                 clickedPoint: null
-            });
+            });[]
+            setMeasurements([...measurements, {
+                "start": clickStatus.clickedPoint,
+                "end": thisPt,
+                "id": id,
+                "color": color,
+                "alpha": alpha
+            }])
         } else {
             setClickStatus({
                 clickedOnce: true,
@@ -187,6 +271,11 @@ export default function RunoutMap() {
                 <Source {...followLineSource}>
                     <Layer {...followLineLayer} />
                     <Layer {...followLineLabelLayer} />
+                </Source>
+
+                <Source {...savedLineSource}>
+                    <Layer {...savedLineLayer} />
+                    <Layer {...savedLineLabelLayer} />
                 </Source>
 
 
