@@ -1,6 +1,5 @@
 import 'runout/styles/globals.css'
 import { Inter } from '@next/font/google';
-import { AppStateWrapper } from 'runout/context/state';
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -15,9 +14,7 @@ export default function App({ Component, pageProps }) {
           }
         `}
       </style>
-      <AppStateWrapper>
-        <Component {...pageProps} />
-      </AppStateWrapper>
+      <Component {...pageProps} />
     </>
   );
 }
