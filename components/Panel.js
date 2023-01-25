@@ -25,7 +25,7 @@ export default function Panel({ measurements, setMeasurements }) {
     return (
         <div>
             <div>
-                <p className="text-xs font-light align-middle float-right py-1">by <a className='underline' href="https://anthonycannistra.com">Tony Cannistra</a></p>
+                <p className="text-xs font-light align-middle float-right py-1">by <a className='underline' href="https://github.com/acannistra">Tony Cannistra</a></p>
                 <h1 className="text-lg font-bold">Measure Alpha Angles</h1>
             </div>
             <div className="text-sm">
