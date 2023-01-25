@@ -17,6 +17,21 @@ const randomColor = () => {
     return "#" + Math.floor(Math.random() * 16777215).toString(16);
 }
 
+const emptyFeatureCollection = {
+    type: "FeatureCollection",
+    features: [
+    ]
+}
+
+const emptyLinestringFeature = {
+    type: "Feature",
+    geometry: {
+        type: "LineString",
+        coordinates: []
+    }
+}
+
+
 const addLineToGeoJSON = (start, end, color, id, angle, geojson) => {
     var fc = [
         ...geojson.features,
@@ -74,11 +89,7 @@ const savedLineLayer = {
 const savedLineSource = {
     id: "_savedline",
     type: "geojson",
-    data: {
-        type: "FeatureCollection",
-        features: [
-        ]
-    }
+    data: emptyFeatureCollection
 }
 
 const savedLineLabelLayer = {
@@ -104,13 +115,7 @@ const savedLineLabelLayer = {
 const followLineSource = {
     id: '_trackline',
     type: 'geojson',
-    data: {
-        type: "Feature",
-        geometry: {
-            type: "LineString",
-            coordinates: []
-        }
-    }
+    data: emptyLinestringFeature
 }
 
 
@@ -199,7 +204,8 @@ export default function RunoutMap({ measurements, setMeasurements }) {
             var id = uuidv4();
             var color = randomColor();
             var alpha = computeAlpha(clickStatus.clickedPoint, thisPt);
-            var currentSource = mapRef.current.getMap().getSource('_savedline')
+            var thisMap = mapRef.current.getMap()
+            var currentSource = thisMap.getSource('_savedline')
             var newGeoJSON = addLineToGeoJSON(clickStatus.clickedPoint, thisPt, color, id, alpha, currentSource._data);
 
             currentSource.setData({
@@ -216,8 +222,10 @@ export default function RunoutMap({ measurements, setMeasurements }) {
                 "end": thisPt,
                 "id": id,
                 "color": color,
-                "alpha": alpha
+                "alpha": alpha,
+                "length": turf.distance(clickStatus.clickedPoint.point, thisPt.point)
             }])
+            thisMap.getSource('_trackline').setData(emptyLinestringFeature)
         } else {
             setClickStatus({
                 clickedOnce: true,
@@ -228,6 +236,12 @@ export default function RunoutMap({ measurements, setMeasurements }) {
 
 
     }
+
+    React.useEffect(() => {
+        if (mapRef.current && measurements.length == 0) {
+            mapRef.current.getMap().getSource('_savedline').setData(emptyFeatureCollection)
+        }
+    }, [measurements]);
 
     return (
         <div style={{
