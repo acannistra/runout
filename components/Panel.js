@@ -32,7 +32,10 @@ export default function Panel({ measurements, setMeasurements }) {
                 </ul>
             </div>
             <div className="pt-5">
-                <h2>Measurements</h2>
+                <div className='grid grid-cols-2 mb-2'>
+                    <h2>Measurements</h2>
+                    <button class=" h-5 text-xs place-self-end rounded-full px-2 outline outline-1 outline-offset-2 outline-blue-500">Clear</button>
+                </div>
                 <div className="grid divide-y-2 my-2">
                     <div className="grid grid-cols-3 divide-x py-2">
                         <div className='text-sm text-center'>Color</div>
@@ -40,8 +43,11 @@ export default function Panel({ measurements, setMeasurements }) {
                         <div className='text-sm text-center'>Elevation (m)</div>
                     </div>
                     {measurements.length === 0 &&
-                        <div className='col-span-3 text-center text-slate-500 italic text-xs'>
-                            Measurements created on the map will appear here.
+                        <div className="grid grid-cols-3 divide-x py-2">
+
+                            <div className='col-span-3 text-center text-slate-500 italic text-xs'>
+                                Measurements created on the map will appear here.
+                            </div>
                         </div>
                     }
                     {measurement_rows}
