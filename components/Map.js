@@ -59,8 +59,8 @@ const slopeAngleSource = {
     id: "usgs-slope",
     type: "raster",
     tiles: [
-        'https://gaiavectortilerendering.global.ssl.fastly.net/slope-avy-v2/{z}/{x}/{y}.png'
-        //"https://elevation.nationalmap.gov/arcgis/rest/services/3DEPElevation/ImageServer/exportImage?bbox={bbox-epsg-3857}&bboxSR=102100&imageSR=102100&format=jpgpng&renderingRule=%7B%22rasterFunction%22%3A%22Slope+Map%22%7D&f=image"
+        //'https://gaiavectortilerendering.global.ssl.fastly.net/slope-avy-v2/{z}/{x}/{y}.png'
+        "https://elevation.nationalmap.gov/arcgis/rest/services/3DEPElevation/ImageServer/exportImage?bbox={bbox-epsg-3857}&bboxSR=102100&imageSR=102100&format=jpgpng&renderingRule=%7B%22rasterFunction%22%3A%22Slope+Map%22%7D&f=image"
     ],
     tilesize: 512,
     minzoom: 10
